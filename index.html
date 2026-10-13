@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大富翁網頁版 (Monopoly)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+        }
+
+        #setup-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #4f46e5, #06b6d4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        .setup-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .avatar-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 5px;
+        }
+
+        .avatar-option {
+            font-size: 1.5rem;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .avatar-option.selected {
+            background: #e0e7ff;
+            border-color: #4f46e5;
+            transform: scale(1.1);
+        }
+
+        #game-container {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 1rem;
+            gap: 1rem;
+        }
+
+        #board-area {
+            flex: 2;
+            background: #d1fae5;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            width: 100%;
+            height: 100%;
+            max-width: 85vh;
+            max-height: 85vh;
+            gap: 2px;
+            background: #064e3b;
+            border: 2px solid #064e3b;
+            position: relative;
+        }
+
+        .space {
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.75rem;
+            position: relative;
+            border-radius: 2px;
+            padding: 2px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .space-name {
+            font-weight: bold;
+            margin-bottom: 2px;
+            font-size: 0.8rem;
+            line-height: 1.1;
+        }
+
+        .space-price {
+            color: #555;
+            font-size: 0.7rem;
+        }
+
+        .space-owner {
+            width: 100%;
+            height: 6px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+
+        .barricade-icon {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.2rem;
+            z-index: 4;
+            display: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .tokens-container {
+            position: absolute;
+            top: 15px; left: 2px; right: 2px; bottom: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .player-token {
+            font-size: 1.2rem;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 1px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            transition: transform 0.3s ease;
+        }
+
+        #center-area {
+            position: absolute;
+            grid-column: 2 / 10;
+            grid-row: 2 / 10;
+            background: #d1fae5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            z-index: 5;
+        }
+
+        .card-deck {
+            width: 110px;
+            height: 160px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.8rem;
+            color: white;
+            box-shadow: 4px 4px 10px rgba(0,0,0,0.3);
+            cursor: default;
+            transition: all 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .deck-chance { background: linear-gradient(135deg, #f59e0b, #ea580c); }
+        .deck-chest { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+
+        .card-deck.active {
+            cursor: pointer;
+            animation: pulse-glow 1.5s infinite;
+            transform: scale(1.05);
+        }
+
+        .card-deck.active:hover {
+            transform: scale(1.12);
+        }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+
+        #sidebar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-width: 400px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .active-player-box {
+            border: 2px solid #f59e0b;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            transform: scale(1.02);
+            background-color: #fffbeb !important;
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: #e5e7eb;
+            color: #374151;
+            margin-left: 4px;
+            font-weight: normal;
+        }
+
+        .item-btn {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: #e2e8f0;
+            color: #475569;
+            cursor: pointer;
+            border: 1px solid #cbd5e1;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .item-btn:hover:not(:disabled) { background: #cbd5e1; }
+        .item-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .item-btn.has-item { background: #fef08a; border-color: #fde047; color: #854d0e; font-weight: bold;}
+
+        #modal-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 150;
+            backdrop-filter: blur(3px);
+        }
+
+        #modal {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="setup-screen">
+        <div class="setup-box text-center">
+            <h1 class="text-3xl font-bold mb-6 text-indigo-700">大富翁<br><span class="text-xl text-gray-600">網頁版</span></h1>
+            
+            <div class="mb-5 text-left bg-red-50 p-3 rounded-lg border border-red-200">
+                <label class="block text-sm font-bold mb-1 text-red-600">玩家一</label>
+                <input type="text" id="input-p1" value="小明" class="w-full border rounded px-3 py-1.5 outline-none mb-2" maxlength="8">
+                <div class="avatar-selector" id="avatars-p1"></div>
+            </div>
+            
+            <div class="mb-5 text-left bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <label class="block text-sm font-bold mb-1 text-blue-600">玩家二</label>
+                <input type="text" id="input-p2" value="小華" class="w-full border rounded px-3 py-1.5 outline-none mb-2" maxlength="8">
+                <div class="avatar-selector" id="avatars-p2"></div>
+            </div>
+            
+            <div class="mb-6 text-left bg-green-50 p-3 rounded-lg border border-green-200">
+                <label class="block text-sm font-bold mb-1 text-green-600">玩家三</label>
+                <input type="text" id="input-p3" value="小美" class="w-full border rounded px-3 py-1.5 outline-none mb-2" maxlength="8">
+                <div class="avatar-selector" id="avatars-p3"></div>
+            </div>
+            
+            <button id="btn-start-game" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors">
+                開始遊戲
+            </button>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <!-- Board Area -->
+        <div id="board-area">
+            <div id="board">
+                <div id="center-area">
+                    <div class="card-deck deck-chance" id="deck-chance">機會</div>
+                    <div class="card-deck deck-chest" id="deck-chest">命運</div>
+                </div>
+                <!-- 網格由 JS 生成 -->
+            </div>
+            
+            <div id="modal-overlay">
+                <div id="modal">
+                    <h2 id="modal-title" class="text-2xl font-bold mb-4">標題</h2>
+                    <p id="modal-desc" class="mb-6 text-gray-700 whitespace-pre-line text-lg">內容說明</p>
+                    <div id="modal-buttons" class="flex justify-center gap-4 flex-wrap"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="sidebar">
+            <div class="panel flex flex-col gap-3" id="players-info">
+                <h2 class="text-lg font-bold border-b pb-2">玩家狀態</h2>
+                
+                <!-- Player 1 -->
+                <div id="pinfo-0" class="flex flex-col p-2 rounded bg-red-50 transition-all">
+                    <div class="flex justify-between items-center mb-1">
+                        <div class="flex items-center gap-2">
+                            <span id="avatar-display-0" class="text-xl bg-white rounded-full w-8 h-8 flex justify-center items-center shadow-sm"></span>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-gray-800" id="name-display-0">P1</span>
+                                <div id="status-0" class="flex gap-1 flex-wrap"></div>
+                            </div>
+                        </div>
+                        <span class="font-mono text-lg font-bold text-gray-700" id="money-0">$20000</span>
+                    </div>
+                </div>
+
+                <!-- Player 2 -->
+                <div id="pinfo-1" class="flex flex-col p-2 rounded bg-blue-50 transition-all">
+                    <div class="flex justify-between items-center mb-1">
+                        <div class="flex items-center gap-2">
+                            <span id="avatar-display-1" class="text-xl bg-white rounded-full w-8 h-8 flex justify-center items-center shadow-sm"></span>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-gray-800" id="name-display-1">P2</span>
+                                <div id="status-1" class="flex gap-1 flex-wrap"></div>
+                            </div>
+                        </div>
+                        <span class="font-mono text-lg font-bold text-gray-700" id="money-1">$20000</span>
+                    </div>
+                </div>
+
+                <!-- Player 3 -->
+                <div id="pinfo-2" class="flex flex-col p-2 rounded bg-green-50 transition-all">
+                    <div class="flex justify-between items-center mb-1">
+                        <div class="flex items-center gap-2">
+                            <span id="avatar-display-2" class="text-xl bg-white rounded-full w-8 h-8 flex justify-center items-center shadow-sm"></span>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-gray-800" id="name-display-2">P3</span>
+                                <div id="status-2" class="flex gap-1 flex-wrap"></div>
+                            </div>
+                        </div>
+                        <span class="font-mono text-lg font-bold text-gray-700" id="money-2">$20000</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel text-center flex-1 flex flex-col justify-center items-center">
+                <h2 class="text-lg font-bold mb-2">當前回合</h2>
+                <div id="current-player-name" class="text-2xl font-bold mb-2">Player</div>
+                <div class="text-6xl mb-4" id="dice-result">🎲</div>
+                
+                <!-- 道具庫 -->
+                <div class="w-full bg-gray-50 rounded-lg p-2 mb-4">
+                    <div class="text-xs text-gray-500 font-bold mb-1 text-left">你的道具：</div>
+                    <div class="flex justify-center gap-2">
+                        <button id="btn-use-roadblock" class="item-btn" disabled>🚧 <span id="ui-inv-roadblock">0</span></button>
+                        <button id="btn-use-turtle" class="item-btn" disabled>🐢 <span id="ui-inv-turtle">0</span></button>
+                        <button id="btn-use-dice" class="item-btn" disabled>🕹️ <span id="ui-inv-dice">0</span></button>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 w-full">
+                    <button id="btn-roll" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-4 rounded-lg shadow-lg transition-all text-xl disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        擲骰子
+                    </button>
+                </div>
+                
+                <div id="action-hint" class="mt-4 text-sm font-bold text-red-500 hidden animate-pulse">
+                    👉 請點擊畫面中央發光的卡牌堆抽卡！
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const avatarOptions = ['🐶', '🐱', '🦊', '🚗', '🚢', '🎩', '🍔', '👻'];
+        let selectedAvatars = { p1: '🐶', p2: '🐱', p3: '🚗' };
+
+        ['p1', 'p2', 'p3'].forEach(pid => {
+            const container = document.getElementById(`avatars-${pid}`);
+            avatarOptions.forEach(emoji => {
+                const opt = document.createElement('div');
+                opt.className = `avatar-option ${selectedAvatars[pid] === emoji ? 'selected' : ''}`;
+                opt.innerText = emoji;
+                opt.onclick = () => {
+                    Array.from(container.children).forEach(c => c.classList.remove('selected'));
+                    opt.classList.add('selected');
+                    selectedAvatars[pid] = emoji;
+                };
+                container.appendChild(opt);
+            });
+        });
+
+        // 22 個獨一無二、絕對不重複的國家名稱（包含台灣與中國）
+        const uniqueCountries = [
+            "台灣", "中國", "美國", "英國", "法國", "德國", 
+            "義大利", "西班牙", "瑞士", "加拿大", "巴西", "阿根廷", 
+            "澳洲", "南非", "印度", "泰國", "新加坡", "越南", 
+            "印尼", "荷蘭", "瑞典", "紐西蘭"
+        ];
+
+        // 10 張機會卡
+        const chanceCards = [
+            { text: "超速違規！罰款 500 元", effect: async (p) => { p.money -= 500; } },
+            { text: "統一發票中獎！獲得 1000 元", effect: async (p) => { p.money += 1000; } },
+            { text: "被警察逮捕！直接入獄", effect: async (p) => { p.position = 9; p.inJail = true; forceMoveToken(p.id, 9); } },
+            { text: "搭上順風車！前進 3 格", effect: async (p) => { await stepMoveToken(p, 3); await handleSpaceArrival(p, spaces[p.position]); } },
+            { text: "迷路了！後退 2 格", effect: async (p) => { await stepMoveToken(p, -2); await handleSpaceArrival(p, spaces[p.position]); } },
+            { text: "獲得道具：路障 1 個！\n(可在回合開始前阻擋去路)", effect: async (p) => { p.items.roadblock++; } },
+            { text: "獲得道具：烏龜卡 1 張！\n(使用後只會前進 1 格)", effect: async (p) => { p.items.turtle++; } },
+            { text: "獲得道具：遙控骰子 1 個！\n(可自訂擲骰點數 1~6)", effect: async (p) => { p.items.dice++; } },
+            { text: "投資獲利！獲得 800 元", effect: async (p) => { p.money += 800; } },
+            { text: "房屋修繕費！繳交 1000 元", effect: async (p) => { p.money -= 1000; } }
+        ];
+
+        // 10 張命運卡
+        const chestCards = [
+            { text: "意外之財！獲得 2000 元", effect: async (p) => { p.money += 2000; } },
+            { text: "遭小偷！損失 800 元", effect: async (p) => { p.money -= 800; } },
+            { text: "吃壞肚子送醫！暫停 1 次", effect: async (p) => { p.skipTurns++; } },
+            { text: "出國旅遊！前進到「火車站」", effect: async (p) => { 
+                let steps = 18 - p.position; 
+                if(steps < 0) steps += 36;
+                await stepMoveToken(p, steps); 
+                await handleSpaceArrival(p, spaces[p.position]); 
+            }},
+            { text: "獲得道具：遙控骰子 1 個", effect: async (p) => { p.items.dice++; } },
+            { text: "獲得道具：路障 1 個", effect: async (p) => { p.items.roadblock++; } },
+            { text: "做善事捐款！扣除 500 元", effect: async (p) => { p.money -= 500; } },
+            { text: "獲得政府補助金！獲得 1500 元", effect: async (p) => { p.money += 1500; } },
+            { text: "車子拋錨！後退 3 格", effect: async (p) => { await stepMoveToken(p, -3); await handleSpaceArrival(p, spaces[p.position]); } },
+            { text: "獲得保險理賠！獲得 1200 元", effect: async (p) => { p.money += 1200; } }
+        ];
+
+        const totalSpaces = 36;
+        const spaces = [];
+        let countryIndex = 0;
+
+        for (let i = 0; i < totalSpaces; i++) {
+            if (i === 0) spaces.push({ id: i, name: "起點\n(+$2000)", type: "start", hasBarricade: false });
+            else if (i === 9) spaces.push({ id: i, name: "探監", type: "jail", hasBarricade: false });
+            else if (i === 18) spaces.push({ id: i, name: "火車站", type: "parking", hasBarricade: false });
+            else if (i === 27) spaces.push({ id: i, name: "直接入獄", type: "go_jail", hasBarricade: false });
+            else if (i === 4 || i === 22 || i === 31) spaces.push({ id: i, name: "機會", type: "chance", hasBarricade: false });
+            else if (i === 13 || i === 17 || i === 34) spaces.push({ id: i, name: "命運", type: "chest", hasBarricade: false });
+            else if (i === 8 || i === 25) spaces.push({ id: i, name: "繳稅", type: "tax", rent: 800, hasBarricade: false });
+            else {
+                let basePrice = 500 + Math.floor(i / 5) * 400;
+                spaces.push({ 
+                    id: i, 
+                    name: uniqueCountries[countryIndex % uniqueCountries.length], 
+                    type: "property", 
+                    price: basePrice, 
+                    rent: Math.floor(basePrice * 0.4),
+                    owner: null,
+                    hasBarricade: false
+                });
+                countryIndex++;
+            }
+        }
+
+        let players = [];
+        let currentPlayerIndex = 0;
+        let isActionLocked = false;
+        let waitingForCard = false;
+        let pendingCardType = null;
+        let preSetDiceValue = null;
+        let isTurtleMove = false;
+
+        const setupScreen = document.getElementById('setup-screen');
+        const gameContainer = document.getElementById('game-container');
+        const boardEl = document.getElementById('board');
+        const btnRoll = document.getElementById('btn-roll');
+        const diceResult = document.getElementById('dice-result');
+        const actionHint = document.getElementById('action-hint');
+        const modalOverlay = document.getElementById('modal-overlay');
+
+        const btnRoadblock = document.getElementById('btn-use-roadblock');
+        const btnTurtle = document.getElementById('btn-use-turtle');
+        const btnDice = document.getElementById('btn-use-dice');
+
+        document.getElementById('btn-start-game').addEventListener('click', () => {
+            const n1 = document.getElementById('input-p1').value || "玩家一";
+            const n2 = document.getElementById('input-p2').value || "玩家二";
+            const n3 = document.getElementById('input-p3').value || "玩家三";
+
+            // 每位玩家一開始各發 1 個路障、1張烏龜卡、1個遙控骰子
+            players = [
+                { id: 0, name: n1, avatar: selectedAvatars.p1, color: "#ef4444", money: 15000, position: 0, inJail: false, skipTurns: 0, items: { roadblock: 1, turtle: 1, dice: 1 } },
+                { id: 1, name: n2, avatar: selectedAvatars.p2, color: "#3b82f6", money: 15000, position: 0, inJail: false, skipTurns: 0, items: { roadblock: 1, turtle: 1, dice: 1 } },
+                { id: 2, name: n3, avatar: selectedAvatars.p3, color: "#10b981", money: 15000, position: 0, inJail: false, skipTurns: 0, items: { roadblock: 1, turtle: 1, dice: 1 } }
+            ];
+
+            players.forEach(p => {
+                document.getElementById(`name-display-${p.id}`).innerText = p.name;
+                document.getElementById(`avatar-display-${p.id}`).innerText = p.avatar;
+            });
+
+            setupScreen.style.display = 'none';
+            gameContainer.style.display = 'flex';
+            initBoard();
+        });
+
+        function initBoard() {
+            Array.from(boardEl.children).forEach(c => {
+                if(c.id !== 'center-area') c.remove();
+            });
+
+            for (let i = 0; i < totalSpaces; i++) {
+                const space = spaces[i];
+                const cell = document.createElement('div');
+                cell.className = 'space';
+                cell.id = `space-${i}`;
+                
+                let row, col;
+                if (i >= 0 && i <= 9) { row = 1; col = i + 1; }
+                else if (i >= 10 && i <= 18) { row = i - 9 + 1; col = 10; }
+                else if (i >= 19 && i <= 27) { row = 10; col = 10 - (i - 18); }
+                else if (i >= 28 && i <= 35) { row = 10 - (i - 27); col = 1; }
+
+                cell.style.gridRow = row;
+                cell.style.gridColumn = col;
+
+                if (space.type === 'start') cell.style.backgroundColor = '#fef08a';
+                if (space.type === 'chance' || space.type === 'chest') cell.style.backgroundColor = '#fed7aa';
+                if (space.type === 'tax') cell.style.backgroundColor = '#fecaca';
+
+                cell.innerHTML = `
+                    <div class="space-name">${space.name.replace('\n', '<br>')}</div>
+                    ${space.type === 'property' ? `<div class="space-price">$${space.price}</div>` : ''}
+                    <div class="barricade-icon" id="barricade-icon-${i}">🚧</div>
+                    <div class="tokens-container" id="tokens-${i}"></div>
+                    <div class="space-owner" id="owner-bar-${i}"></div>
+                `;
+                boardEl.appendChild(cell);
+            }
+
+            players.forEach(p => {
+                const token = document.createElement('div');
+                token.className = 'player-token';
+                token.id = `token-${p.id}`;
+                token.innerText = p.avatar;
+                token.style.border = `2px solid ${p.color}`;
+                document.getElementById(`tokens-0`).appendChild(token);
+            });
+
+            updateUI();
+        }
+
+        function updateUI() {
+            players.forEach(p => {
+                document.getElementById(`money-${p.id}`).innerText = `$${p.money}`;
+                document.getElementById(`pinfo-${p.id}`).classList.remove('active-player-box');
+                
+                const statusDiv = document.getElementById(`status-${p.id}`);
+                statusDiv.innerHTML = '';
+                if(p.inJail) statusDiv.innerHTML += `<span class="status-badge">入獄中</span>`;
+                if(p.skipTurns > 0) statusDiv.innerHTML += `<span class="status-badge bg-yellow-200">暫停x${p.skipTurns}</span>`;
+            });
+            
+            document.getElementById(`pinfo-${currentPlayerIndex}`).classList.add('active-player-box');
+            
+            const curr = players[currentPlayerIndex];
+            const cpName = document.getElementById('current-player-name');
+            cpName.innerText = `${curr.avatar} ${curr.name}`;
+            cpName.style.color = curr.color;
+
+            document.getElementById('ui-inv-roadblock').innerText = curr.items.roadblock;
+            document.getElementById('ui-inv-turtle').innerText = curr.items.turtle;
+            document.getElementById('ui-inv-dice').innerText = curr.items.dice;
+
+            const toggleItemBtn = (btn, count) => {
+                btn.disabled = isActionLocked || count <= 0;
+                if(count > 0) btn.classList.add('has-item');
+                else btn.classList.remove('has-item');
+            };
+
+            toggleItemBtn(btnRoadblock, curr.items.roadblock);
+            toggleItemBtn(btnTurtle, curr.items.turtle);
+            toggleItemBtn(btnDice, curr.items.dice);
+
+            btnRoll.disabled = isActionLocked;
+            actionHint.style.display = waitingForCard ? 'block' : 'none';
+
+            for(let i=0; i<totalSpaces; i++) {
+                const icon = document.getElementById(`barricade-icon-${i}`);
+                if(icon) icon.style.display = spaces[i].hasBarricade ? 'block' : 'none';
+            }
+        }
+
+        function showModal(title, description, buttons) {
+            return new Promise((resolve) => {
+                document.getElementById('modal-title').innerText = title;
+                document.getElementById('modal-desc').innerText = description;
+                const btnContainer = document.getElementById('modal-buttons');
+                btnContainer.innerHTML = '';
+
+                buttons.forEach(btnConfig => {
+                    const btn = document.createElement('button');
+                    btn.className = `px-6 py-2 rounded font-bold text-white transition-colors ${btnConfig.colorClass} m-1 shadow-md`;
+                    btn.innerText = btnConfig.text;
+                    btn.onclick = () => {
+                        modalOverlay.style.display = 'none';
+                        resolve(btnConfig.value);
+                    };
+                    btnContainer.appendChild(btn);
+                });
+
+                modalOverlay.style.display = 'flex';
+            });
+        }
+
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        async function stepMoveToken(player, steps) {
+            if (steps === 0) return;
+            const direction = steps > 0 ? 1 : -1;
+            const absSteps = Math.abs(steps);
+            
+            for(let i = 0; i < absSteps; i++) {
+                await sleep(350); // 慢動作一格一格移動
+                player.position = (player.position + direction + totalSpaces) % totalSpaces;
+                
+                if(direction > 0 && player.position === 0) {
+                    player.money += 2000;
+                    updateUI(); 
+                }
+                
+                forceMoveToken(player.id, player.position);
+
+                if (spaces[player.position].hasBarricade) {
+                    spaces[player.position].hasBarricade = false;
+                    updateUI();
+                    await showModal("遭遇路障！", "你被路障擋下了，強制停在此格！", [{ text: "可惡！", value: true, colorClass: "bg-red-500 hover:bg-red-600" }]);
+                    break;
+                }
+            }
+        }
+
+        function forceMoveToken(playerId, targetPos) {
+            const token = document.getElementById(`token-${playerId}`);
+            document.getElementById(`tokens-${targetPos}`).appendChild(token);
+        }
+
+        async function nextTurn() {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            isActionLocked = false;
+            preSetDiceValue = null;
+            isTurtleMove = false;
+            updateUI();
+        }
+
+        btnRoadblock.addEventListener('click', async () => {
+            const player = players[currentPlayerIndex];
+            if(player.items.roadblock <= 0 || isActionLocked) return;
+
+            const buttons = [1, 2, 3, 4, 5, 6, 7, 8].map(num => ({
+                text: `前方 ${num} 格`, value: num, colorClass: "bg-orange-500"
+            }));
+            buttons.push({ text: "取消", value: 0, colorClass: "bg-gray-400" });
+
+            const choice = await showModal("放置路障", "你要將路障放置在前方第幾格？", buttons);
+            if (choice > 0) {
+                player.items.roadblock--;
+                const targetPos = (player.position + choice) % totalSpaces;
+                spaces[targetPos].hasBarricade = true;
+                updateUI();
+            }
+        });
+
+        btnTurtle.addEventListener('click', async () => {
+            const player = players[currentPlayerIndex];
+            if(player.items.turtle <= 0 || isActionLocked) return;
+            const confirm = await showModal("使用烏龜卡", "使用後，你這次擲骰只會前進 1 格，確定使用？", [
+                { text: "使用", value: true, colorClass: "bg-green-500" },
+                { text: "取消", value: false, colorClass: "bg-gray-400" }
+            ]);
+            if(confirm) {
+                player.items.turtle--;
+                isTurtleMove = true;
+                preSetDiceValue = 1;
+                updateUI();
+            }
+        });
+
+        btnDice.addEventListener('click', async () => {
+            const player = players[currentPlayerIndex];
+            if(player.items.dice <= 0 || isActionLocked) return;
+            
+            const buttons = [1, 2, 3, 4, 5, 6].map(num => ({
+                text: `${num} 點`, value: num, colorClass: "bg-blue-500"
+            }));
+            buttons.push({ text: "取消", value: 0, colorClass: "bg-gray-400" });
+
+            const choice = await showModal("遙控骰子", "請選擇你想要的點數：", buttons);
+            if (choice > 0) {
+                player.items.dice--;
+                preSetDiceValue = choice;
+                updateUI();
+            }
+        });
+
+        btnRoll.addEventListener('click', async () => {
+            if (isActionLocked) return;
+            isActionLocked = true;
+            updateUI();
+
+            const player = players[currentPlayerIndex];
+            
+            if (player.skipTurns > 0) {
+                player.skipTurns--;
+                await showModal("暫停回合", "你因為之前的事件被標記暫停，必須跳過這一回合！", [{ text: "無奈接受", value: true, colorClass: "bg-yellow-600 hover:bg-yellow-700" }]);
+                nextTurn();
+                return;
+            }
+
+            if (player.inJail) {
+                await showModal("入獄中", "你正在監獄裡反省，跳過一回合！", [{ text: "確定", value: true, colorClass: "bg-gray-600 hover:bg-gray-700" }]);
+                player.inJail = false;
+                nextTurn();
+                return;
+            }
+
+            let dice = preSetDiceValue !== null ? preSetDiceValue : Math.floor(Math.random() * 6) + 1;
+            
+            for(let i=0; i<8; i++) {
+                diceResult.innerText = Math.floor(Math.random() * 6) + 1;
+                await sleep(50);
+            }
+            diceResult.innerText = dice;
+
+            await stepMoveToken(player, dice);
+            await handleSpaceArrival(player, spaces[player.position]);
+        });
+
+        async function handleSpaceArrival(player, space) {
+            switch (space.type) {
+                case 'property':
+                    if (space.owner === null) {
+                        if (player.money >= space.price) {
+                            const buy = await showModal(
+                                "購買地產", 
+                                `你來到了 ${space.name}。\n要花費 $${space.price} 購買嗎？`,
+                                [
+                                    { text: "購買", value: true, colorClass: "bg-green-500 hover:bg-green-600" },
+                                    { text: "放棄", value: false, colorClass: "bg-gray-500 hover:bg-gray-600" }
+                                ]
+                            );
+                            if (buy) {
+                                player.money -= space.price;
+                                space.owner = player.id;
+                                document.getElementById(`owner-bar-${space.id}`).style.backgroundColor = player.color;
+                            }
+                        }
+                    } else if (space.owner !== player.id) {
+                        const owner = players.find(p => p.id === space.owner);
+                        player.money -= space.rent;
+                        owner.money += space.rent;
+                        await showModal("支付過路費", `你踩到了 ${owner.name} 的地盤。\n支付租金 $${space.rent}。`, [{ text: "支付", value: true, colorClass: "bg-red-500 hover:bg-red-600" }]);
+                    }
+                    break;
+
+                case 'tax':
+                    player.money -= space.rent;
+                    await showModal("繳納稅金", `依法繳交所得稅！\n扣除 $${space.rent}。`, [{ text: "繳交", value: true, colorClass: "bg-red-500 hover:bg-red-600" }]);
+                    break;
+
+                case 'go_jail':
+                    player.position = 9;
+                    player.inJail = true;
+                    forceMoveToken(player.id, 9);
+                    await showModal("遭到逮捕！", "直接入獄！不經過起點，無法領取獎勵。", [{ text: "乖乖就範", value: true, colorClass: "bg-gray-800 hover:bg-gray-900" }]);
+                    break;
+
+                case 'chance':
+                case 'chest':
+                    waitingForCard = true;
+                    pendingCardType = space.type;
+                    
+                    if (space.type === 'chance') document.getElementById('deck-chance').classList.add('active');
+                    else document.getElementById('deck-chest').classList.add('active');
+                    
+                    updateUI();
+                    return; 
+            }
+
+            updateUI();
+            nextTurn();
+        }
+
+        async function handleCardDraw(type) {
+            if (!waitingForCard || pendingCardType !== type) return;
+            
+            const player = players[currentPlayerIndex];
+            document.getElementById('deck-chance').classList.remove('active');
+            document.getElementById('deck-chest').classList.remove('active');
+            waitingForCard = false;
+            pendingCardType = null;
+            updateUI();
+
+            const deck = type === 'chance' ? chanceCards : chestCards;
+            const card = deck[Math.floor(Math.random() * deck.length)];
+            const title = type === 'chance' ? "機會卡" : "命運卡";
+            
+            await showModal(title, card.text, [{ text: "收下", value: true, colorClass: type === 'chance' ? "bg-orange-500" : "bg-purple-600" }]);
+            
+            await card.effect(player);
+            
+            if (!waitingForCard) {
+                updateUI();
+                nextTurn();
+            }
+        }
+
+        document.getElementById('deck-chance').addEventListener('click', () => handleCardDraw('chance'));
+        document.getElementById('deck-chest').addEventListener('click', () => handleCardDraw('chest'));
+
+    </script>
+</body>
+</html>
