@@ -3,79 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>大富翁網頁版 (Monopoly)</title>
+    <title>大富翁 (Monopoly) - 遊戲進行中</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             font-family: 'Inter', 'Noto Sans TC', sans-serif;
-            background-color: #f0f4f8;
+            background-color: #f3f4f6;
             margin: 0;
             overflow: hidden;
             display: flex;
             height: 100vh;
         }
 
-        #setup-screen {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, #4f46e5, #06b6d4);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            overflow-y: auto;
-        }
+        /* 隱藏設定畫面 */
+        #setup-screen { display: none; }
 
-        .setup-box {
-            background: white;
-            padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 500px;
-        }
-
-        .avatar-selector {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 5px;
-        }
-
-        .avatar-option {
-            font-size: 1.5rem;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            border: 2px solid transparent;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-
-        .avatar-option.selected {
-            background: #e0e7ff;
-            border-color: #4f46e5;
-            transform: scale(1.1);
-        }
-
+        /* 顯示遊戲畫面 */
         #game-container {
-            display: none;
+            display: flex;
             width: 100%;
             height: 100%;
             padding: 1rem;
             gap: 1rem;
+            box-sizing: border-box;
         }
 
         #board-area {
             flex: 2;
             background: #d1fae5;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             position: relative;
-            padding: 10px;
+            padding: 16px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -87,44 +46,47 @@
             grid-template-rows: repeat(10, 1fr);
             width: 100%;
             height: 100%;
-            max-width: 85vh;
-            max-height: 85vh;
+            max-width: 82vh;
+            max-height: 82vh;
             gap: 2px;
-            background: #064e3b;
-            border: 2px solid #064e3b;
+            background: #047857;
+            border: 3px solid #047857;
+            border-radius: 6px;
             position: relative;
         }
 
         .space {
-            background: #fff;
+            background: #ffffff;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             position: relative;
             border-radius: 2px;
-            padding: 2px;
+            padding: 1px;
             box-sizing: border-box;
             overflow: hidden;
+            user-select: none;
         }
 
         .space-name {
             font-weight: bold;
-            margin-bottom: 2px;
-            font-size: 0.8rem;
+            margin-bottom: 1px;
+            font-size: 0.75rem;
             line-height: 1.1;
+            color: #1f2937;
         }
 
         .space-price {
-            color: #555;
-            font-size: 0.7rem;
+            color: #4b5563;
+            font-size: 0.65rem;
         }
 
         .space-owner {
             width: 100%;
-            height: 6px;
+            height: 5px;
             position: absolute;
             bottom: 0;
             left: 0;
@@ -135,15 +97,15 @@
             top: 0;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             z-index: 4;
             display: none;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
         }
 
         .tokens-container {
             position: absolute;
-            top: 15px; left: 2px; right: 2px; bottom: 8px;
+            top: 12px; left: 2px; right: 2px; bottom: 6px;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
@@ -153,63 +115,63 @@
         }
 
         .player-token {
-            font-size: 1.2rem;
-            width: 26px;
-            height: 26px;
+            font-size: 1.1rem;
+            width: 24px;
+            height: 24px;
             display: flex;
             justify-content: center;
             align-items: center;
             margin: 1px;
             background: rgba(255,255,255,0.95);
             border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-            transition: transform 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
         #center-area {
             position: absolute;
             grid-column: 2 / 10;
             grid-row: 2 / 10;
-            background: #d1fae5;
+            background: #065f46;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 2rem;
+            gap: 1.5rem;
             z-index: 5;
+            border-radius: 4px;
         }
 
         .card-deck {
             width: 110px;
-            height: 160px;
-            border-radius: 8px;
+            height: 155px;
+            border-radius: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
             font-weight: bold;
             font-size: 1.8rem;
             color: white;
-            box-shadow: 4px 4px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
             cursor: default;
             transition: all 0.3s ease;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
         }
 
-        .deck-chance { background: linear-gradient(135deg, #f59e0b, #ea580c); }
-        .deck-chest { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+        .deck-chance { background: linear-gradient(135deg, #f97316, #c2410c); border: 2px solid #fdba74; }
+        .deck-chest { background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: 2px solid #ddd6fe; }
 
         .card-deck.active {
             cursor: pointer;
             animation: pulse-glow 1.5s infinite;
-            transform: scale(1.05);
+            transform: scale(1.04);
         }
 
         .card-deck.active:hover {
-            transform: scale(1.12);
+            transform: scale(1.1);
         }
 
         @keyframes pulse-glow {
             0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
-            70% { box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); }
+            70% { box-shadow: 0 0 0 16px rgba(255, 255, 255, 0); }
             100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
         }
 
@@ -218,20 +180,19 @@
             display: flex;
             flex-direction: column;
             gap: 1rem;
-            max-width: 400px;
+            max-width: 380px;
         }
 
         .panel {
             background: white;
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 1rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
         }
 
         .active-player-box {
             border: 2px solid #f59e0b;
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
-            transform: scale(1.02);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
             background-color: #fffbeb !important;
         }
 
@@ -247,20 +208,20 @@
 
         .item-btn {
             font-size: 0.8rem;
-            padding: 4px 8px;
-            border-radius: 6px;
-            background: #e2e8f0;
-            color: #475569;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: #f3f4f6;
+            color: #4b5563;
             cursor: pointer;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #d1d5db;
             transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 4px;
         }
-        .item-btn:hover:not(:disabled) { background: #cbd5e1; }
-        .item-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .item-btn.has-item { background: #fef08a; border-color: #fde047; color: #854d0e; font-weight: bold;}
+        .item-btn:hover:not(:disabled) { background: #e5e7eb; }
+        .item-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .item-btn.has-item { background: #fef08a; border-color: #fde047; color: #854d0e; font-weight: bold; }
 
         #modal-overlay {
             position: absolute;
@@ -270,7 +231,7 @@
             justify-content: center;
             align-items: center;
             z-index: 150;
-            backdrop-filter: blur(3px);
+            backdrop-filter: blur(2px);
         }
 
         #modal {
@@ -285,150 +246,108 @@
     </style>
 </head>
 <body>
-
-    <div id="setup-screen">
-        <div class="setup-box text-center">
-            <h1 class="text-3xl font-bold mb-6 text-indigo-700">大富翁<br><span class="text-xl text-gray-600">網頁版</span></h1>
-            
-            <div class="mb-5 text-left bg-red-50 p-3 rounded-lg border border-red-200">
-                <label class="block text-sm font-bold mb-1 text-red-600">玩家一</label>
-                <input type="text" id="input-p1" value="小明" class="w-full border rounded px-3 py-1.5 outline-none mb-2" maxlength="8">
-                <div class="avatar-selector" id="avatars-p1"></div>
-            </div>
-            
-            <div class="mb-5 text-left bg-blue-50 p-3 rounded-lg border border-blue-200">
-                <label class="block text-sm font-bold mb-1 text-blue-600">玩家二</label>
-                <input type="text" id="input-p2" value="小華" class="w-full border rounded px-3 py-1.5 outline-none mb-2" maxlength="8">
-                <div class="avatar-selector" id="avatars-p2"></div>
-            </div>
-            
-            <div class="mb-6 text-left bg-green-50 p-3 rounded-lg border border-green-200">
-                <label class="block text-sm font-bold mb-1 text-green-600">玩家三</label>
-                <input type="text" id="input-p3" value="小美" class="w-full border rounded px-3 py-1.5 outline-none mb-2" maxlength="8">
-                <div class="avatar-selector" id="avatars-p3"></div>
-            </div>
-            
-            <button id="btn-start-game" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors">
-                開始遊戲
-            </button>
-        </div>
-    </div>
-
+    <!-- 遊戲主介面 -->
     <div id="game-container">
-        <!-- Board Area -->
+        <!-- 棋盤區域 -->
         <div id="board-area">
             <div id="board">
                 <div id="center-area">
                     <div class="card-deck deck-chance" id="deck-chance">機會</div>
                     <div class="card-deck deck-chest" id="deck-chest">命運</div>
                 </div>
-                <!-- 網格由 JS 生成 -->
+                <!-- 棋盤方格由 JS 自動生成 -->
             </div>
             
+            <!-- 自訂對話框 -->
             <div id="modal-overlay">
                 <div id="modal">
-                    <h2 id="modal-title" class="text-2xl font-bold mb-4">標題</h2>
-                    <p id="modal-desc" class="mb-6 text-gray-700 whitespace-pre-line text-lg">內容說明</p>
-                    <div id="modal-buttons" class="flex justify-center gap-4 flex-wrap"></div>
+                    <h2 id="modal-title" class="text-2xl font-bold mb-3 text-gray-800">標題</h2>
+                    <p id="modal-desc" class="mb-6 text-gray-600 whitespace-pre-line text-base leading-relaxed">內容說明</p>
+                    <div id="modal-buttons" class="flex justify-center gap-3 flex-wrap"></div>
                 </div>
             </div>
         </div>
 
+        <!-- 側邊控制面板 -->
         <div id="sidebar">
             <div class="panel flex flex-col gap-3" id="players-info">
-                <h2 class="text-lg font-bold border-b pb-2">玩家狀態</h2>
+                <h2 class="text-base font-bold border-b pb-2 text-gray-700">玩家狀態</h2>
                 
                 <!-- Player 1 -->
-                <div id="pinfo-0" class="flex flex-col p-2 rounded bg-red-50 transition-all">
-                    <div class="flex justify-between items-center mb-1">
+                <div id="pinfo-0" class="flex flex-col p-2.5 rounded-xl bg-gray-50 transition-all">
+                    <div class="flex justify-between items-center">
                         <div class="flex items-center gap-2">
-                            <span id="avatar-display-0" class="text-xl bg-white rounded-full w-8 h-8 flex justify-center items-center shadow-sm"></span>
+                            <span id="avatar-display-0" class="text-2xl bg-white rounded-full w-9 h-9 flex justify-center items-center shadow-sm border">👻</span>
                             <div class="flex flex-col">
-                                <span class="font-bold text-gray-800" id="name-display-0">P1</span>
+                                <span class="font-bold text-gray-800" id="name-display-0">peach</span>
                                 <div id="status-0" class="flex gap-1 flex-wrap"></div>
                             </div>
                         </div>
-                        <span class="font-mono text-lg font-bold text-gray-700" id="money-0">$20000</span>
+                        <span class="font-mono text-base font-bold text-gray-700" id="money-0">$13700</span>
                     </div>
                 </div>
 
                 <!-- Player 2 -->
-                <div id="pinfo-1" class="flex flex-col p-2 rounded bg-blue-50 transition-all">
-                    <div class="flex justify-between items-center mb-1">
+                <div id="pinfo-1" class="flex flex-col p-2.5 rounded-xl bg-gray-50 transition-all">
+                    <div class="flex justify-between items-center">
                         <div class="flex items-center gap-2">
-                            <span id="avatar-display-1" class="text-xl bg-white rounded-full w-8 h-8 flex justify-center items-center shadow-sm"></span>
+                            <span id="avatar-display-1" class="text-2xl bg-white rounded-full w-9 h-9 flex justify-center items-center shadow-sm border">👻</span>
                             <div class="flex flex-col">
-                                <span class="font-bold text-gray-800" id="name-display-1">P2</span>
+                                <span class="font-bold text-gray-800" id="name-display-1">grape</span>
                                 <div id="status-1" class="flex gap-1 flex-wrap"></div>
                             </div>
                         </div>
-                        <span class="font-mono text-lg font-bold text-gray-700" id="money-1">$20000</span>
+                        <span class="font-mono text-base font-bold text-gray-700" id="money-1">$13000</span>
                     </div>
                 </div>
 
                 <!-- Player 3 -->
-                <div id="pinfo-2" class="flex flex-col p-2 rounded bg-green-50 transition-all">
-                    <div class="flex justify-between items-center mb-1">
+                <div id="pinfo-2" class="flex flex-col p-2.5 rounded-xl bg-gray-50 transition-all">
+                    <div class="flex justify-between items-center">
                         <div class="flex items-center gap-2">
-                            <span id="avatar-display-2" class="text-xl bg-white rounded-full w-8 h-8 flex justify-center items-center shadow-sm"></span>
+                            <span id="avatar-display-2" class="text-2xl bg-white rounded-full w-9 h-9 flex justify-center items-center shadow-sm border">🦊</span>
                             <div class="flex flex-col">
-                                <span class="font-bold text-gray-800" id="name-display-2">P3</span>
+                                <span class="font-bold text-gray-800" id="name-display-2">kiwi</span>
                                 <div id="status-2" class="flex gap-1 flex-wrap"></div>
                             </div>
                         </div>
-                        <span class="font-mono text-lg font-bold text-gray-700" id="money-2">$20000</span>
+                        <span class="font-mono text-base font-bold text-gray-700" id="money-2">$12700</span>
                     </div>
                 </div>
             </div>
 
-            <div class="panel text-center flex-1 flex flex-col justify-center items-center">
-                <h2 class="text-lg font-bold mb-2">當前回合</h2>
-                <div id="current-player-name" class="text-2xl font-bold mb-2">Player</div>
-                <div class="text-6xl mb-4" id="dice-result">🎲</div>
-                
-                <!-- 道具庫 -->
-                <div class="w-full bg-gray-50 rounded-lg p-2 mb-4">
-                    <div class="text-xs text-gray-500 font-bold mb-1 text-left">你的道具：</div>
-                    <div class="flex justify-center gap-2">
-                        <button id="btn-use-roadblock" class="item-btn" disabled>🚧 <span id="ui-inv-roadblock">0</span></button>
-                        <button id="btn-use-turtle" class="item-btn" disabled>🐢 <span id="ui-inv-turtle">0</span></button>
-                        <button id="btn-use-dice" class="item-btn" disabled>🕹️ <span id="ui-inv-dice">0</span></button>
-                    </div>
+            <div class="panel text-center flex-1 flex flex-col justify-between items-center py-4">
+                <div>
+                    <h2 class="text-sm font-bold text-gray-500 mb-1">當前回合</h2>
+                    <div id="current-player-name" class="text-2xl font-bold mb-3 flex items-center justify-center gap-2 text-gray-800">Player</div>
+                    <div class="text-6xl mb-3 font-mono font-bold text-gray-800" id="dice-result">6</div>
                 </div>
+                
+                <div class="w-full">
+                    <!-- 道具列 -->
+                    <div class="bg-gray-50 rounded-xl p-2.5 mb-3 border border-gray-100">
+                        <div class="text-xs text-gray-500 font-bold mb-1.5 text-left">你的道具：</div>
+                        <div class="flex justify-center gap-2">
+                            <button id="btn-use-roadblock" class="item-btn" disabled>🚧 <span id="ui-inv-roadblock">1</span></button>
+                            <button id="btn-use-turtle" class="item-btn" disabled>🐢 <span id="ui-inv-turtle">1</span></button>
+                            <button id="btn-use-dice" class="item-btn" disabled>🕹️ <span id="ui-inv-dice">1</span></button>
+                        </div>
+                    </div>
 
-                <div class="flex gap-2 w-full">
-                    <button id="btn-roll" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-4 rounded-lg shadow-lg transition-all text-xl disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    <button id="btn-roll" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition-all text-lg disabled:bg-gray-400 disabled:cursor-not-allowed">
                         擲骰子
                     </button>
                 </div>
                 
-                <div id="action-hint" class="mt-4 text-sm font-bold text-red-500 hidden animate-pulse">
-                    👉 請點擊畫面中央發光的卡牌堆抽卡！
+                <div id="action-hint" class="mt-2 text-xs font-bold text-orange-600 hidden animate-pulse">
+                    👉 請點擊中央發光的卡牌抽卡！
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        const avatarOptions = ['🐶', '🐱', '🦊', '🚗', '🚢', '🎩', '🍔', '👻'];
-        let selectedAvatars = { p1: '🐶', p2: '🐱', p3: '🚗' };
-
-        ['p1', 'p2', 'p3'].forEach(pid => {
-            const container = document.getElementById(`avatars-${pid}`);
-            avatarOptions.forEach(emoji => {
-                const opt = document.createElement('div');
-                opt.className = `avatar-option ${selectedAvatars[pid] === emoji ? 'selected' : ''}`;
-                opt.innerText = emoji;
-                opt.onclick = () => {
-                    Array.from(container.children).forEach(c => c.classList.remove('selected'));
-                    opt.classList.add('selected');
-                    selectedAvatars[pid] = emoji;
-                };
-                container.appendChild(opt);
-            });
-        });
-
-        // 22 個獨一無二、絕對不重複的國家名稱（包含台灣與中國）
+        // 22 個完全不重複的國家名稱
         const uniqueCountries = [
             "台灣", "中國", "美國", "英國", "法國", "德國", 
             "義大利", "西班牙", "瑞士", "加拿大", "巴西", "阿根廷", 
@@ -443,9 +362,9 @@
             { text: "被警察逮捕！直接入獄", effect: async (p) => { p.position = 9; p.inJail = true; forceMoveToken(p.id, 9); } },
             { text: "搭上順風車！前進 3 格", effect: async (p) => { await stepMoveToken(p, 3); await handleSpaceArrival(p, spaces[p.position]); } },
             { text: "迷路了！後退 2 格", effect: async (p) => { await stepMoveToken(p, -2); await handleSpaceArrival(p, spaces[p.position]); } },
-            { text: "獲得道具：路障 1 個！\n(可在回合開始前阻擋去路)", effect: async (p) => { p.items.roadblock++; } },
-            { text: "獲得道具：烏龜卡 1 張！\n(使用後只會前進 1 格)", effect: async (p) => { p.items.turtle++; } },
-            { text: "獲得道具：遙控骰子 1 個！\n(可自訂擲骰點數 1~6)", effect: async (p) => { p.items.dice++; } },
+            { text: "獲得道具：路障 1 個！", effect: async (p) => { p.items.roadblock++; } },
+            { text: "獲得道具：烏龜卡 1 張！", effect: async (p) => { p.items.turtle++; } },
+            { text: "獲得道具：遙控骰子 1 個！", effect: async (p) => { p.items.dice++; } },
             { text: "投資獲利！獲得 800 元", effect: async (p) => { p.money += 800; } },
             { text: "房屋修繕費！繳交 1000 元", effect: async (p) => { p.money -= 1000; } }
         ];
@@ -496,16 +415,25 @@
             }
         }
 
-        let players = [];
-        let currentPlayerIndex = 0;
+        // 修改初始狀態為目前的進度
+        let players = [
+            { id: 0, name: "peach", avatar: "👻", color: "#f97316", money: 13700, position: 13, inJail: false, skipTurns: 1, items: { roadblock: 1, turtle: 1, dice: 1 } },
+            { id: 1, name: "grape", avatar: "👻", color: "#3b82f6", money: 13000, position: 15, inJail: false, skipTurns: 0, items: { roadblock: 1, turtle: 1, dice: 1 } },
+            { id: 2, name: "kiwi", avatar: "🦊", color: "#10b981", money: 12700, position: 17, inJail: false, skipTurns: 1, items: { roadblock: 1, turtle: 1, dice: 1 } }
+        ];
+        
+        // 設定目前的領地所有權進度
+        spaces[3].owner = 1;  // 美國 -> grape
+        spaces[15].owner = 1; // 巴西 -> grape
+        spaces[10].owner = 0; // 義大利 -> peach
+        spaces[11].owner = 2; // 西班牙 -> kiwi
+
+        let currentPlayerIndex = 0; // 當前輪到 peach
         let isActionLocked = false;
         let waitingForCard = false;
         let pendingCardType = null;
         let preSetDiceValue = null;
-        let isTurtleMove = false;
 
-        const setupScreen = document.getElementById('setup-screen');
-        const gameContainer = document.getElementById('game-container');
         const boardEl = document.getElementById('board');
         const btnRoll = document.getElementById('btn-roll');
         const diceResult = document.getElementById('dice-result');
@@ -515,28 +443,6 @@
         const btnRoadblock = document.getElementById('btn-use-roadblock');
         const btnTurtle = document.getElementById('btn-use-turtle');
         const btnDice = document.getElementById('btn-use-dice');
-
-        document.getElementById('btn-start-game').addEventListener('click', () => {
-            const n1 = document.getElementById('input-p1').value || "玩家一";
-            const n2 = document.getElementById('input-p2').value || "玩家二";
-            const n3 = document.getElementById('input-p3').value || "玩家三";
-
-            // 每位玩家一開始各發 1 個路障、1張烏龜卡、1個遙控骰子
-            players = [
-                { id: 0, name: n1, avatar: selectedAvatars.p1, color: "#ef4444", money: 15000, position: 0, inJail: false, skipTurns: 0, items: { roadblock: 1, turtle: 1, dice: 1 } },
-                { id: 1, name: n2, avatar: selectedAvatars.p2, color: "#3b82f6", money: 15000, position: 0, inJail: false, skipTurns: 0, items: { roadblock: 1, turtle: 1, dice: 1 } },
-                { id: 2, name: n3, avatar: selectedAvatars.p3, color: "#10b981", money: 15000, position: 0, inJail: false, skipTurns: 0, items: { roadblock: 1, turtle: 1, dice: 1 } }
-            ];
-
-            players.forEach(p => {
-                document.getElementById(`name-display-${p.id}`).innerText = p.name;
-                document.getElementById(`avatar-display-${p.id}`).innerText = p.avatar;
-            });
-
-            setupScreen.style.display = 'none';
-            gameContainer.style.display = 'flex';
-            initBoard();
-        });
 
         function initBoard() {
             Array.from(boardEl.children).forEach(c => {
@@ -559,8 +465,8 @@
                 cell.style.gridColumn = col;
 
                 if (space.type === 'start') cell.style.backgroundColor = '#fef08a';
-                if (space.type === 'chance' || space.type === 'chest') cell.style.backgroundColor = '#fed7aa';
-                if (space.type === 'tax') cell.style.backgroundColor = '#fecaca';
+                if (space.type === 'chance' || space.type === 'chest') cell.style.backgroundColor = '#ffedd5';
+                if (space.type === 'tax') cell.style.backgroundColor = '#fee2e2';
 
                 cell.innerHTML = `
                     <div class="space-name">${space.name.replace('\n', '<br>')}</div>
@@ -570,6 +476,14 @@
                     <div class="space-owner" id="owner-bar-${i}"></div>
                 `;
                 boardEl.appendChild(cell);
+
+                // 如果有人已經擁有該領地，標示顏色
+                if (space.owner !== null) {
+                    const ownerPlayer = players.find(p => p.id === space.owner);
+                    if(ownerPlayer) {
+                        cell.querySelector('.space-owner').style.backgroundColor = ownerPlayer.color;
+                    }
+                }
             }
 
             players.forEach(p => {
@@ -578,7 +492,7 @@
                 token.id = `token-${p.id}`;
                 token.innerText = p.avatar;
                 token.style.border = `2px solid ${p.color}`;
-                document.getElementById(`tokens-0`).appendChild(token);
+                document.getElementById(`tokens-${p.position}`).appendChild(token);
             });
 
             updateUI();
@@ -599,8 +513,7 @@
             
             const curr = players[currentPlayerIndex];
             const cpName = document.getElementById('current-player-name');
-            cpName.innerText = `${curr.avatar} ${curr.name}`;
-            cpName.style.color = curr.color;
+            cpName.innerHTML = `<span class="text-xl">${curr.avatar}</span> ${curr.name}`;
 
             document.getElementById('ui-inv-roadblock').innerText = curr.items.roadblock;
             document.getElementById('ui-inv-turtle').innerText = curr.items.turtle;
@@ -634,7 +547,7 @@
 
                 buttons.forEach(btnConfig => {
                     const btn = document.createElement('button');
-                    btn.className = `px-6 py-2 rounded font-bold text-white transition-colors ${btnConfig.colorClass} m-1 shadow-md`;
+                    btn.className = `px-5 py-2 rounded-xl font-bold text-white transition-colors ${btnConfig.colorClass} m-1 shadow-md`;
                     btn.innerText = btnConfig.text;
                     btn.onclick = () => {
                         modalOverlay.style.display = 'none';
@@ -655,7 +568,7 @@
             const absSteps = Math.abs(steps);
             
             for(let i = 0; i < absSteps; i++) {
-                await sleep(350); // 慢動作一格一格移動
+                await sleep(350);
                 player.position = (player.position + direction + totalSpaces) % totalSpaces;
                 
                 if(direction > 0 && player.position === 0) {
@@ -668,7 +581,7 @@
                 if (spaces[player.position].hasBarricade) {
                     spaces[player.position].hasBarricade = false;
                     updateUI();
-                    await showModal("遭遇路障！", "你被路障擋下了，強制停在此格！", [{ text: "可惡！", value: true, colorClass: "bg-red-500 hover:bg-red-600" }]);
+                    await showModal("遭遇路障！", "你被路障擋下了，強制停在此格！", [{ text: "知道了", value: true, colorClass: "bg-red-500 hover:bg-red-600" }]);
                     break;
                 }
             }
@@ -683,7 +596,6 @@
             currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
             isActionLocked = false;
             preSetDiceValue = null;
-            isTurtleMove = false;
             updateUI();
         }
 
@@ -692,7 +604,7 @@
             if(player.items.roadblock <= 0 || isActionLocked) return;
 
             const buttons = [1, 2, 3, 4, 5, 6, 7, 8].map(num => ({
-                text: `前方 ${num} 格`, value: num, colorClass: "bg-orange-500"
+                text: `前方 ${num} 格`, value: num, colorClass: "bg-amber-600"
             }));
             buttons.push({ text: "取消", value: 0, colorClass: "bg-gray-400" });
 
@@ -709,12 +621,11 @@
             const player = players[currentPlayerIndex];
             if(player.items.turtle <= 0 || isActionLocked) return;
             const confirm = await showModal("使用烏龜卡", "使用後，你這次擲骰只會前進 1 格，確定使用？", [
-                { text: "使用", value: true, colorClass: "bg-green-500" },
+                { text: "確定", value: true, colorClass: "bg-emerald-600" },
                 { text: "取消", value: false, colorClass: "bg-gray-400" }
             ]);
             if(confirm) {
                 player.items.turtle--;
-                isTurtleMove = true;
                 preSetDiceValue = 1;
                 updateUI();
             }
@@ -725,7 +636,7 @@
             if(player.items.dice <= 0 || isActionLocked) return;
             
             const buttons = [1, 2, 3, 4, 5, 6].map(num => ({
-                text: `${num} 點`, value: num, colorClass: "bg-blue-500"
+                text: `${num} 點`, value: num, colorClass: "bg-indigo-600"
             }));
             buttons.push({ text: "取消", value: 0, colorClass: "bg-gray-400" });
 
@@ -746,13 +657,13 @@
             
             if (player.skipTurns > 0) {
                 player.skipTurns--;
-                await showModal("暫停回合", "你因為之前的事件被標記暫停，必須跳過這一回合！", [{ text: "無奈接受", value: true, colorClass: "bg-yellow-600 hover:bg-yellow-700" }]);
+                await showModal("暫停回合", "你因為之前的事件被標記暫停，必須跳過這一回合！", [{ text: "確定", value: true, colorClass: "bg-amber-600" }]);
                 nextTurn();
                 return;
             }
 
             if (player.inJail) {
-                await showModal("入獄中", "你正在監獄裡反省，跳過一回合！", [{ text: "確定", value: true, colorClass: "bg-gray-600 hover:bg-gray-700" }]);
+                await showModal("入獄中", "你正在監獄裡反省，跳過一回合！", [{ text: "確定", value: true, colorClass: "bg-gray-700" }]);
                 player.inJail = false;
                 nextTurn();
                 return;
@@ -779,7 +690,7 @@
                                 "購買地產", 
                                 `你來到了 ${space.name}。\n要花費 $${space.price} 購買嗎？`,
                                 [
-                                    { text: "購買", value: true, colorClass: "bg-green-500 hover:bg-green-600" },
+                                    { text: "購買", value: true, colorClass: "bg-emerald-600 hover:bg-emerald-700" },
                                     { text: "放棄", value: false, colorClass: "bg-gray-500 hover:bg-gray-600" }
                                 ]
                             );
@@ -806,7 +717,7 @@
                     player.position = 9;
                     player.inJail = true;
                     forceMoveToken(player.id, 9);
-                    await showModal("遭到逮捕！", "直接入獄！不經過起點，無法領取獎勵。", [{ text: "乖乖就範", value: true, colorClass: "bg-gray-800 hover:bg-gray-900" }]);
+                    await showModal("遭到逮捕！", "直接入獄！不經過起點，無法領取獎勵。", [{ text: "確定", value: true, colorClass: "bg-gray-800" }]);
                     break;
 
                 case 'chance':
@@ -839,7 +750,7 @@
             const card = deck[Math.floor(Math.random() * deck.length)];
             const title = type === 'chance' ? "機會卡" : "命運卡";
             
-            await showModal(title, card.text, [{ text: "收下", value: true, colorClass: type === 'chance' ? "bg-orange-500" : "bg-purple-600" }]);
+            await showModal(title, card.text, [{ text: "收下", value: true, colorClass: type === 'chance' ? "bg-orange-600" : "bg-purple-600" }]);
             
             await card.effect(player);
             
@@ -851,6 +762,9 @@
 
         document.getElementById('deck-chance').addEventListener('click', () => handleCardDraw('chance'));
         document.getElementById('deck-chest').addEventListener('click', () => handleCardDraw('chest'));
+
+        // 頁面載入時直接啟動初始化，跳過設定畫面
+        initBoard();
 
     </script>
 </body>
